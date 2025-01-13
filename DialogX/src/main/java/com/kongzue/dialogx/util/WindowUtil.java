@@ -29,7 +29,19 @@ import static android.view.WindowManager.LayoutParams.*;
  * @createTime: 2021/4/29 16:02
  */
 public class WindowUtil {
-    
+
+    public abstract static class WindowSettings {
+
+        //自定义window参数
+        public abstract WindowManager.LayoutParams overrideWindowLayoutParamsInterface(Context context, View dialogView, WindowManager.LayoutParams originWindowLayoutParams);
+
+        //自定义根布局
+        public ViewGroup overrideRootView(Context context){return null;};
+    }
+
+    //自定义window设置
+    public static WindowSettings windowSettings;
+
     public static void show(Activity activity, View dialogView, boolean touchEnable) {
         try {
             if (activity.getWindow().getDecorView().isAttachedToWindow()) {
@@ -48,7 +60,7 @@ public class WindowUtil {
             }
         }
     }
-    
+
     private static void showNow(Activity activity, View dialogView, boolean touchEnable) {
         if (DialogX.globalHoverWindow && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(activity)) {
             Toast.makeText(activity, "使用 DialogX.globalHoverWindow 必须开启悬浮窗权限", Toast.LENGTH_LONG).show();
@@ -57,7 +69,11 @@ public class WindowUtil {
             activity.startActivity(intent);
             return;
         }
-        FrameLayout rootLayout = new FrameLayout(activity);
+        ViewGroup customRootView = null;
+        if (windowSettings != null) {
+            customRootView = windowSettings.overrideRootView(activity);
+        }
+        ViewGroup rootLayout = customRootView == null ? new FrameLayout(activity) : customRootView;
         if (dialogView.getParent() != null) {
             ((ViewGroup) dialogView.getParent()).removeView(dialogView);
         }
@@ -91,7 +107,7 @@ public class WindowUtil {
                             if (baseDialog.getDialogView() == null) {
                                 return false;
                             }
-                            return baseDialog.getOwnActivity().dispatchTouchEvent(event);
+                            return baseDialog.dispatchTouchEvent(event);
                         }
                     }
                     return activity.dispatchTouchEvent(event);
@@ -101,9 +117,15 @@ public class WindowUtil {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             layoutParams.layoutInDisplayCutoutMode = LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
         }
+        if (windowSettings != null) {
+            WindowManager.LayoutParams layoutParamsTemp = windowSettings.overrideWindowLayoutParamsInterface(activity, dialogView, layoutParams);
+            if (layoutParamsTemp != null) {
+                layoutParams = layoutParamsTemp;
+            }
+        }
         manager.addView(rootLayout, layoutParams);
     }
-    
+
     public static void dismiss(View dialogView) {
         BaseDialog baseDialog = (BaseDialog) dialogView.getTag();
         if (baseDialog != null && baseDialog.getOwnActivity() != null) {

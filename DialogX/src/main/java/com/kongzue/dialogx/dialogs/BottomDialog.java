@@ -3,6 +3,7 @@ package com.kongzue.dialogx.dialogs;
 import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
 import android.app.Activity;
+import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.Outline;
 import android.graphics.drawable.BitmapDrawable;
@@ -255,6 +256,7 @@ public class BottomDialog extends BaseDialog implements DialogXBaseBottomDialog 
         public RelativeLayout boxBkg;
         public MaxRelativeLayout bkg;
         public ImageView imgTab;
+        public ViewGroup boxBody;
         public TextView txtDialogTitle;
         public ScrollController scrollView;
         public LinearLayout boxContent;
@@ -280,6 +282,7 @@ public class BottomDialog extends BaseDialog implements DialogXBaseBottomDialog 
             boxBkg = convertView.findViewById(R.id.box_bkg);
             bkg = convertView.findViewById(R.id.bkg);
             imgTab = convertView.findViewById(R.id.img_tab);
+            boxBody = convertView.findViewById(R.id.box_body);
             txtDialogTitle = convertView.findViewById(R.id.txt_dialog_title);
             scrollView = convertView.findViewById(R.id.scrollView);
             boxContent = convertView.findViewById(R.id.box_content);
@@ -343,17 +346,12 @@ public class BottomDialog extends BaseDialog implements DialogXBaseBottomDialog 
             if (backgroundColor == null) backgroundColor = DialogX.backgroundColor;
             if (cancelText == null) cancelText = DialogX.cancelButtonText;
 
-            if (txtDialogTitle != null)txtDialogTitle.getPaint().setFakeBoldText(true);
+            if (txtDialogTitle != null) txtDialogTitle.getPaint().setFakeBoldText(true);
             if (btnSelectNegative != null) btnSelectNegative.getPaint().setFakeBoldText(true);
             if (btnSelectPositive != null) btnSelectPositive.getPaint().setFakeBoldText(true);
             if (btnSelectOther != null) btnSelectOther.getPaint().setFakeBoldText(true);
 
-            boxBkg.setY(getRootFrameLayout().getMeasuredHeight());
-
-            bkg.setMaxWidth(getMaxWidth());
-            bkg.setMaxHeight(getMaxHeight());
-            bkg.setMinimumWidth(getMinWidth());
-            bkg.setMinimumHeight(getMinHeight());
+            boxBkg.setY(getRootFrameLayout() == null ? Resources.getSystem().getDisplayMetrics().heightPixels : getRootFrameLayout().getMeasuredHeight());
 
             boxRoot.setParentDialog(me);
             boxRoot.setOnLifecycleCallBack(new DialogXBaseRelativeLayout.OnLifecycleCallBack() {
@@ -515,13 +513,21 @@ public class BottomDialog extends BaseDialog implements DialogXBaseBottomDialog 
             if (boxRoot == null || getOwnActivity() == null) {
                 return;
             }
+
+            bkg.setMaxWidth(getMaxWidth());
+            bkg.setMaxHeight(getMaxHeight());
+            bkg.setMinimumWidth(getMinWidth());
+            bkg.setMinimumHeight(getMinHeight());
+
             boxRoot.setAutoUnsafePlacePadding(isEnableImmersiveMode());
             boxRoot.setRootPadding(screenPaddings[0], screenPaddings[1], screenPaddings[2], screenPaddings[3]);
             if (backgroundColor != null) {
                 tintColor(bkg, backgroundColor);
-                tintColor(btnSelectOther, backgroundColor);
-                tintColor(btnSelectNegative, backgroundColor);
-                tintColor(btnSelectPositive, backgroundColor);
+                if (style.tintButtonBackground()) {
+                    tintColor(btnSelectOther, backgroundColor);
+                    tintColor(btnSelectNegative, backgroundColor);
+                    tintColor(btnSelectPositive, backgroundColor);
+                }
 
                 if (blurViews != null) {
                     for (View blurView : blurViews) {
@@ -539,6 +545,12 @@ public class BottomDialog extends BaseDialog implements DialogXBaseBottomDialog 
             useTextInfo(btnSelectOther, otherTextInfo);
             useTextInfo(btnSelectPositive, okTextInfo);
 
+            if (boxButton != null) {
+                boxButton.setVisibility((btnSelectNegative != null && btnSelectNegative.getVisibility() == View.VISIBLE) ||
+                        (btnSelectOther != null && btnSelectOther.getVisibility() == View.VISIBLE) ||
+                        (btnSelectPositive != null && btnSelectPositive.getVisibility() == View.VISIBLE) ?
+                        View.VISIBLE : View.GONE);
+            }
             if (titleIcon != null) {
                 int size = (int) txtDialogTitle.getTextSize();
                 titleIcon.setBounds(0, 0, size, size);
@@ -571,9 +583,8 @@ public class BottomDialog extends BaseDialog implements DialogXBaseBottomDialog 
             if (backgroundRadius > -1) {
                 if (bkg.getBackground() instanceof GradientDrawable) {
                     GradientDrawable gradientDrawable = (GradientDrawable) bkg.getBackground();
-                    if (gradientDrawable != null) gradientDrawable.setCornerRadii(new float[]{
-                            backgroundRadius, backgroundRadius, backgroundRadius, backgroundRadius, 0, 0, 0, 0
-                    });
+                    if (gradientDrawable != null)
+                        gradientDrawable.setCornerRadii(new float[]{backgroundRadius, backgroundRadius, backgroundRadius, backgroundRadius, 0, 0, 0, 0});
                 }
                 if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
                     bkg.setOutlineProvider(new ViewOutlineProvider() {
@@ -725,7 +736,7 @@ public class BottomDialog extends BaseDialog implements DialogXBaseBottomDialog 
                         }
 
                         // 上移动画
-                        ObjectAnimator enterAnim = ObjectAnimator.ofFloat(boxBkg, "y", getRootFrameLayout().getMeasuredHeight(), bkgEnterAimY = boxRoot.getUnsafePlace().top + customDialogTop);
+                        ObjectAnimator enterAnim = ObjectAnimator.ofFloat(boxBkg, "y", getRootFrameLayout() == null ? Resources.getSystem().getDisplayMetrics().heightPixels : getRootFrameLayout().getMeasuredHeight(), bkgEnterAimY = boxRoot.getUnsafePlace().top + customDialogTop);
                         enterAnim.setDuration(enterAnimDurationTemp);
                         enterAnim.setAutoCancel(true);
                         enterAnim.setInterpolator(new DecelerateInterpolator(2f));
@@ -1398,7 +1409,7 @@ public class BottomDialog extends BaseDialog implements DialogXBaseBottomDialog 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                 getDialogView().setTranslationZ(orderIndex);
             } else {
-                error("DialogX: " + dialogKey() + " 执行 .setThisOrderIndex("+orderIndex+") 失败：系统不支持此方法，SDK-API 版本必须大于 21（LOLLIPOP）");
+                error("DialogX: " + dialogKey() + " 执行 .setThisOrderIndex(" + orderIndex + ") 失败：系统不支持此方法，SDK-API 版本必须大于 21（LOLLIPOP）");
             }
         }
         return this;

@@ -10,6 +10,7 @@ import android.graphics.PixelFormat;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Build;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
@@ -77,8 +78,9 @@ public class DialogFragmentImpl extends DialogFragment {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
                 for (BaseDialog dialog : BaseDialog.getRunningDialogList()) {
-                    if (dialog.getOwnActivity() == activity && dialog != baseDialog) {
+                    if (dialog.getOwnActivity() == activity && dialog != baseDialog && dialog.getDialogImplMode() == baseDialog.getDialogImplMode()) {
                         if (!(dialog instanceof NoTouchInterface) && dialog.getDialogView() != null) {
+                            Log.e(">>>", "onTouch: dialog=" + dialog + "  baseDialog="+baseDialog );
                             dialog.getDialogView().dispatchTouchEvent(event);
                             return true;
                         }
@@ -107,10 +109,7 @@ public class DialogFragmentImpl extends DialogFragment {
                 }
             }
             dialogWindow.getDecorView().setSystemUiVisibility(visibility);
-            dialogWindow.addFlags(
-                    WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS |
-                            WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION
-            );
+            dialogWindow.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS | WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION);
             dialogWindow.setStatusBarColor(Color.TRANSPARENT);
             dialogWindow.setNavigationBarColor(Color.TRANSPARENT);
         } else {

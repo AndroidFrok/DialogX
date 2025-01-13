@@ -40,6 +40,7 @@ import com.kongzue.dialogx.util.views.ActivityScreenShotImageView;
 import com.kongzue.dialogx.util.views.DialogXBaseRelativeLayout;
 import com.kongzue.dialogx.util.views.MaxRelativeLayout;
 
+import java.lang.reflect.Method;
 import java.util.HashMap;
 
 /**
@@ -397,7 +398,7 @@ public class FullScreenDialog extends BaseDialog implements DialogXBaseBottomDia
 
         @Override
         public void doDismiss(View v) {
-            if (FullScreenDialog.this.preDismiss(FullScreenDialog.this)){
+            if (FullScreenDialog.this.preDismiss(FullScreenDialog.this)) {
                 return;
             }
             if (v != null) v.setEnabled(false);
@@ -904,11 +905,35 @@ public class FullScreenDialog extends BaseDialog implements DialogXBaseBottomDia
         if (deviceRadiusCache == null) {
             deviceRadiusCache = 0;
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
-                WindowInsets rootInsets = getRootFrameLayout().getRootWindowInsets();
-                RoundedCorner lT = rootInsets.getRoundedCorner(RoundedCorner.POSITION_TOP_LEFT);
-                RoundedCorner rT = rootInsets.getRoundedCorner(RoundedCorner.POSITION_TOP_RIGHT);
-                if (lT != null && rT != null) {
-                    deviceRadiusCache = Math.max(lT.getRadius(), rT.getRadius());
+                WindowInsets rootInsets = getRootFrameLayout() == null ? publicWindowInsets() : getRootFrameLayout().getRootWindowInsets();
+                if (rootInsets != null) {
+                    RoundedCorner lT = rootInsets.getRoundedCorner(RoundedCorner.POSITION_TOP_LEFT);
+                    RoundedCorner rT = rootInsets.getRoundedCorner(RoundedCorner.POSITION_TOP_RIGHT);
+                    if (lT != null && rT != null) {
+                        deviceRadiusCache = Math.max(lT.getRadius(), rT.getRadius());
+                    }
+                }
+            }
+            if (deviceRadiusCache == 0) {
+                String manufacturer = Build.MANUFACTURER.toLowerCase();
+                if ("xiaomi".equals(manufacturer)) {
+                    try {
+                        Class<?> systemPropertiesClass = Class.forName("android.os.SystemProperties");
+                        Method getIntMethod = systemPropertiesClass.getMethod("getInt", String.class, int.class);
+                        deviceRadiusCache = (int) getIntMethod.invoke(null, "ro.miui.notch.radius", 0);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+            if (deviceRadiusCache == 0) {
+                try {
+                    int resourceId = me.getResources().getIdentifier("rounded_corner_radius", "dimen", "android");
+                    if (resourceId > 0) {
+                        deviceRadiusCache = me.getResources().getDimensionPixelSize(resourceId);
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
             }
         }
@@ -960,7 +985,7 @@ public class FullScreenDialog extends BaseDialog implements DialogXBaseBottomDia
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                 getDialogView().setTranslationZ(orderIndex);
             } else {
-                error("DialogX: " + dialogKey() + " 执行 .setThisOrderIndex("+orderIndex+") 失败：系统不支持此方法，SDK-API 版本必须大于 21（LOLLIPOP）");
+                error("DialogX: " + dialogKey() + " 执行 .setThisOrderIndex(" + orderIndex + ") 失败：系统不支持此方法，SDK-API 版本必须大于 21（LOLLIPOP）");
             }
         }
         return this;

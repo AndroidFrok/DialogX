@@ -21,6 +21,8 @@ import android.widget.AdapterView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
+import androidx.annotation.ColorInt;
+import androidx.annotation.ColorRes;
 import androidx.annotation.Nullable;
 import androidx.lifecycle.Lifecycle;
 
@@ -285,7 +287,7 @@ public class PopMenu extends BaseDialog {
     }
 
     private void refreshMenuLoc() {
-        if (getDialogImpl() == null || getDialogImpl().boxRoot == null) {
+        if (getDialogImpl() == null || getDialogImpl().boxRoot == null || baseView() == null) {
             return;
         }
         getDialogImpl().boxBody.setTag(null);
@@ -616,6 +618,9 @@ public class PopMenu extends BaseDialog {
             } else {
                 boxRoot.setClickable(false);
             }
+            if (backgroundColor != null) {
+                tintColor(boxBody, backgroundColor);
+            }
 
             if (backgroundRadius > -1) {
                 if (boxBody.getBackground() instanceof GradientDrawable) {
@@ -672,7 +677,7 @@ public class PopMenu extends BaseDialog {
 
         @Override
         public void doDismiss(View v) {
-            if (preDismiss(PopMenu.this)){
+            if (preDismiss(PopMenu.this)) {
                 return;
             }
             if (v != null) {
@@ -1428,7 +1433,7 @@ public class PopMenu extends BaseDialog {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                 getDialogView().setTranslationZ(orderIndex);
             } else {
-                error("DialogX: " + dialogKey() + " 执行 .setThisOrderIndex("+orderIndex+") 失败：系统不支持此方法，SDK-API 版本必须大于 21（LOLLIPOP）");
+                error("DialogX: " + dialogKey() + " 执行 .setThisOrderIndex(" + orderIndex + ") 失败：系统不支持此方法，SDK-API 版本必须大于 21（LOLLIPOP）");
             }
         }
         return this;
@@ -1507,5 +1512,21 @@ public class PopMenu extends BaseDialog {
             return true;
         }
         return enabled;
+    }
+
+    public int getBackgroundColor() {
+        return backgroundColor;
+    }
+
+    public PopMenu setBackgroundColor(@ColorInt int backgroundColor) {
+        this.backgroundColor = backgroundColor;
+        refreshUI();
+        return this;
+    }
+
+    public PopMenu setBackgroundColorRes(@ColorRes int backgroundColorResId) {
+        this.backgroundColor = getColor(backgroundColorResId);
+        refreshUI();
+        return this;
     }
 }

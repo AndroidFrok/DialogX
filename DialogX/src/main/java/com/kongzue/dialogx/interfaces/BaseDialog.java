@@ -17,6 +17,7 @@ import android.text.TextUtils;
 import android.util.Log;
 import android.view.HapticFeedbackConstants;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowInsets;
@@ -26,6 +27,7 @@ import android.widget.FrameLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.FragmentManager;
 import androidx.lifecycle.Lifecycle;
@@ -71,7 +73,8 @@ public abstract class BaseDialog implements LifecycleOwner {
     protected WeakReference<DialogFragmentImpl> ownDialogFragmentImpl;
     protected DialogX.IMPL_MODE dialogImplMode = DialogX.implIMPLMode;
     protected WeakReference<DialogXFloatingWindowActivity> floatingWindowActivity;
-    private WeakReference<DialogListBuilder> dialogListBuilder;
+    @Nullable
+    private DialogListBuilder dialogListBuilder;
     protected LifecycleRegistry lifecycle = new LifecycleRegistry(this);
     protected Map<String, Object> data;
     protected DialogXRunnable onShowRunnable;
@@ -183,7 +186,7 @@ public abstract class BaseDialog implements LifecycleOwner {
             }
             dialog.dialogView = new WeakReference<>(view);
 
-            log(dialog.dialogKey() + ".show on " + dialog.getOwnActivity());
+            log(dialog.dialogKey() + ".show on " + (dialog.isActivityImplMode() ? dialog.getOwnActivity() : "window"));
 
             addDialogToRunningList(dialog);
             switch (dialog.dialogImplMode) {
@@ -431,8 +434,12 @@ public abstract class BaseDialog implements LifecycleOwner {
                 }, true);
                 break;
         }
-        if (baseDialog.getDialogListBuilder() != null && !baseDialog.getDialogListBuilder().isEmpty()) {
-            baseDialog.getDialogListBuilder().showNext();
+        if (baseDialog.getDialogListBuilder() != null) {
+            if (baseDialog.getDialogListBuilder().isEmpty()) {
+                baseDialog.cleanDialogList();
+            } else {
+                baseDialog.getDialogListBuilder().showNext();
+            }
         }
     }
 
@@ -532,11 +539,15 @@ public abstract class BaseDialog implements LifecycleOwner {
     public abstract boolean isCancelable();
 
     public View createView(int layoutId) {
-        if (getOwnActivity() == null) {
-            error("DialogX 未初始化(E3)。\n请检查是否在启动对话框前进行初始化操作，使用以下代码进行初始化：\nDialogX.init(context);\n\n另外建议您前往查看 DialogX 的文档进行使用：https://github.com/kongzue/DialogX");
-            return null;
+        if (isActivityImplMode()) {
+            if (getOwnActivity() == null) {
+                error("DialogX 未初始化(E3)。\n请检查是否在启动对话框前进行初始化操作，使用以下代码进行初始化：\nDialogX.init(context);\n\n另外建议您前往查看 DialogX 的文档进行使用：https://github.com/kongzue/DialogX");
+                return null;
+            }
+            return LayoutInflater.from(getOwnActivity()).inflate(layoutId, null);
+        } else {
+            return LayoutInflater.from(getApplicationContext()).inflate(layoutId, null);
         }
-        return LayoutInflater.from(getOwnActivity()).inflate(layoutId, null);
     }
 
     public boolean isShow() {
@@ -576,6 +587,9 @@ public abstract class BaseDialog implements LifecycleOwner {
             textView.setMaxLines(textInfo.getMaxLines());
         } else {
             textView.setMaxLines(Integer.MAX_VALUE);
+        }
+        if (textInfo.getTypeface() != null) {
+            textView.setTypeface(textInfo.getTypeface());
         }
 
         textView.getPaint().setFakeBoldText(textInfo.isBold());
@@ -634,17 +648,23 @@ public abstract class BaseDialog implements LifecycleOwner {
         return theme == DialogX.THEME.LIGHT;
     }
 
+    @Nullable
     public FrameLayout getRootFrameLayout() {
         Activity activity = getOwnActivity();
-        if (activity == null) {
-            activity = getTopActivity();
+        FrameLayout decorView;
+        if (isActivityImplMode()) {
             if (activity == null) {
-                error("DialogX 错误：在 getRootFrameLayout() 时无法获取绑定的 activity，请确认是否正确初始化：\n" + "DialogX.init(context);\n\n" + "或者使用 .show(activity) 启动对话框\n另外建议您前往查看 DialogX 的文档进行使用：https://github.com/kongzue/DialogX");
-                return null;
+                activity = getTopActivity();
+                if (activity == null) {
+                    error("DialogX 错误：在 getRootFrameLayout() 时无法获取绑定的 activity，请确认是否正确初始化：\n" + "DialogX.init(context);\n\n" + "或者使用 .show(activity) 启动对话框\n另外建议您前往查看 DialogX 的文档进行使用：https://github.com/kongzue/DialogX");
+                    return null;
+                }
+                setOwnActivity(activity);
             }
-            setOwnActivity(activity);
+            decorView = getDecorView(activity);
+        } else {
+            decorView = (FrameLayout) getDialogView().getParent();
         }
-        FrameLayout decorView = getDecorView(activity);
         if (decorView == null) {
             error("DialogX 错误：在 getRootFrameLayout() 时无法获 activity(" + activity + ") 的 decorView，请检查该 activity 是否正常显示且可以使 DialogX 基于其显示。\n" + "若该 activity 不可用，可通过以下代码配置豁免 DialogX 对话框绑定至该 activity，例如：\n" + "DialogX.unsupportedActivitiesPackageNames = new String[]{\n" + "        \"com.bytedance.sdk.openadsdk.stub.activity\",\n" + "        \"com.mobile.auth.gatewayauth\",\n" + "        \"com.google.android.gms.ads\"\n" + "};\n\n" + "另外建议您前往查看 DialogX 的文档进行使用：https://github.com/kongzue/DialogX");
             return null;
@@ -672,7 +692,7 @@ public abstract class BaseDialog implements LifecycleOwner {
         preShow = true;
         dismissAnimFlag = false;
         setOwnActivity(getTopActivity());
-        if (getOwnActivity() == null) {
+        if (getOwnActivity() == null && isActivityImplMode()) {
             // 尝试重新获取 activity
             init(null);
             if (getOwnActivity() == null) {
@@ -704,6 +724,10 @@ public abstract class BaseDialog implements LifecycleOwner {
                 imm.hideSoftInputFromWindow(view.getWindowToken(), InputMethodManager.HIDE_NOT_ALWAYS);
             }
         }
+    }
+
+    private boolean isActivityImplMode() {
+        return getDialogImplMode() == DialogX.IMPL_MODE.VIEW || getDialogImplMode() == DialogX.IMPL_MODE.FLOATING_ACTIVITY || getDialogImplMode() == DialogX.IMPL_MODE.DIALOG_FRAGMENT;
     }
 
     protected String getString(int resId) {
@@ -863,6 +887,16 @@ public abstract class BaseDialog implements LifecycleOwner {
         return new CopyOnWriteArrayList<>(runningDialogList);
     }
 
+    public static List<BaseDialog> getRunningDialogList(Activity activity) {
+        List<BaseDialog> result = new ArrayList<>();
+        for (BaseDialog dialog : runningDialogList) {
+            if (dialog != null && dialog.isShow && dialog.getOwnActivity() == activity) {
+                result.add(dialog);
+            }
+        }
+        return result;
+    }
+
     protected void imeShow(EditText editText, boolean show) {
         if (getOwnActivity() == null) {
             return;
@@ -899,18 +933,19 @@ public abstract class BaseDialog implements LifecycleOwner {
         return mMainHandler.get();
     }
 
+    @Nullable
     public DialogListBuilder getDialogListBuilder() {
-        if (dialogListBuilder == null) {
-            return null;
-        }
-        return dialogListBuilder.get();
+        return dialogListBuilder;
     }
 
-    public void setDialogListBuilder(DialogListBuilder dialogListBuilder) {
-        this.dialogListBuilder = new WeakReference<>(dialogListBuilder);
+    public void setDialogListBuilder(@NonNull DialogListBuilder dialogListBuilder) {
+        this.dialogListBuilder = dialogListBuilder;
     }
 
     public void cleanDialogList() {
+        if (this.dialogListBuilder != null) {
+            this.dialogListBuilder.clear();
+        }
         this.dialogListBuilder = null;
     }
 
@@ -1017,11 +1052,8 @@ public abstract class BaseDialog implements LifecycleOwner {
 
     protected Float getFloatStyleAttr(Float styleValue, Float defaultValue) {
         if (styleValue <= 0) {
-            log("styleValue=" + styleValue + "<=0 ");
-            log("return defaultValue=" + defaultValue);
             return defaultValue;
         }
-        log("return styleValue=" + styleValue);
         return styleValue;
     }
 
@@ -1101,5 +1133,16 @@ public abstract class BaseDialog implements LifecycleOwner {
                 || activity.isFinishing()
                 || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT && activity.isDestroyed())
                 || (activity instanceof LifecycleOwner && ((LifecycleOwner) activity).getLifecycle().getCurrentState() == Lifecycle.State.DESTROYED);
+    }
+
+    public boolean dispatchTouchEvent(MotionEvent event) {
+        if (getDialogView() == null) {
+            if (ownActivity != null && ownActivity.get() != null) {
+                return ownActivity.get().dispatchTouchEvent(event);
+            } else {
+                return false;
+            }
+        }
+        return getDialogView().dispatchTouchEvent(event);
     }
 }

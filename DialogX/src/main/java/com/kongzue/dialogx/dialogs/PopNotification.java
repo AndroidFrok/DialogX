@@ -45,7 +45,9 @@ import com.kongzue.dialogx.util.views.DialogXBaseRelativeLayout;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -604,7 +606,7 @@ public class PopNotification extends BaseDialog implements NoTouchInterface {
                 @Override
                 public void onChange(Rect unsafeRect) {
                     if (align == DialogXStyle.PopNotificationSettings.ALIGN.TOP) {
-                        boxBody.setY(defaultTop == 0 ? defaultTop = (unsafeRect.top + bodyMargin[1]) : defaultTop);
+                        boxBody.setY(defaultTop <= 0 ? defaultTop = (unsafeRect.top + bodyMargin[1]) : defaultTop);
                     } else if (align == DialogXStyle.PopNotificationSettings.ALIGN.TOP_INSIDE) {
                         boxBody.setPadding(0, unsafeRect.top, 0, 0);
                     }
@@ -655,6 +657,10 @@ public class PopNotification extends BaseDialog implements NoTouchInterface {
             boxBody.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
+                    if (dismissAnimFlag){
+                        log("skip click @ A");
+                        return;
+                    }
                     haptic(v);
                     if (onPopNotificationClickListener != null) {
                         if (!onPopNotificationClickListener.onClick(me, v)) {
@@ -669,6 +675,9 @@ public class PopNotification extends BaseDialog implements NoTouchInterface {
             txtDialogxButton.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
+                    if (dismissAnimFlag){
+                        return;
+                    }
                     haptic(v);
                     if (onButtonClickListener != null) {
                         if (!onButtonClickListener.onClick(me, v)) {
@@ -847,6 +856,17 @@ public class PopNotification extends BaseDialog implements NoTouchInterface {
 
             if (!dismissAnimFlag && boxRoot != null) {
                 dismissAnimFlag = true;
+                boxCustom.setVisibility(View.GONE);
+                boxBody.setFocusable(false);
+                boxBody.setClickable(false);
+                boxBody.setOnTouchListener(new View.OnTouchListener() {
+                    @Override
+                    public boolean onTouch(View v, MotionEvent event) {
+                        return false;
+                    }
+                });
+                txtDialogxButton.setFocusable(false);
+                txtDialogxButton.setClickable(false);
                 boxRoot.post(new Runnable() {
                     @Override
                     public void run() {
@@ -937,15 +957,31 @@ public class PopNotification extends BaseDialog implements NoTouchInterface {
      * 等待所有 popNotification 处于待回收状态时一并回收可以避免此问题
      */
     private void waitForDismiss() {
+        if (popNotificationList == null || popNotificationList.isEmpty()) {
+            return;
+        }
         preRecycle = true;
-        if (popNotificationList != null) {
-            for (PopNotification popNotification : popNotificationList) {
-                if (!popNotification.preRecycle) {
-                    return;
+        CopyOnWriteArrayList<PopNotification> copyPopNotificationList = new CopyOnWriteArrayList<>(popNotificationList);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            copyPopNotificationList.removeIf(Objects::isNull);
+        }else{
+            Iterator<PopNotification> iterator = copyPopNotificationList.iterator();
+            while (iterator.hasNext()) {
+                if (iterator.next() == null) {
+                    iterator.remove();
                 }
             }
-            for (PopNotification popNotification : new CopyOnWriteArrayList<>(popNotificationList)) {
-                dismiss(popNotification.getDialogView());
+        }
+        boolean allPreRecycled = true;
+        for (PopNotification popTip : copyPopNotificationList) {
+            if (!popTip.preRecycle) {
+                allPreRecycled = false;
+                break;
+            }
+        }
+        if (allPreRecycled) {
+            for (PopNotification popTip : copyPopNotificationList) {
+                dismiss(popTip.getDialogView());
             }
         }
     }

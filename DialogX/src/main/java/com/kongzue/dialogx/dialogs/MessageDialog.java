@@ -127,6 +127,10 @@ public class MessageDialog extends BaseDialog {
         return new MessageDialog().setCustomView(onBindView);
     }
 
+    public MessageDialog(CharSequence message) {
+        this.message = message;
+    }
+
     public MessageDialog(CharSequence title, CharSequence message) {
         this.title = title;
         this.message = message;
@@ -542,8 +546,7 @@ public class MessageDialog extends BaseDialog {
                         txtInput.getTextCursorDrawable().mutate().setColorFilter((new PorterDuffColorFilter(cursorColor, PorterDuff.Mode.SRC_ATOP)));
                     } else {
                         try {
-                            @SuppressLint("SoonBlockedPrivateApi")
-                            Field field = TextView.class.getDeclaredField("mCursorDrawableRes");
+                            @SuppressLint("SoonBlockedPrivateApi") Field field = TextView.class.getDeclaredField("mCursorDrawableRes");
                             field.setAccessible(true);
                             field.set(txtInput, R.drawable.rect_dialogx_defalut_edittxt_cursor);
                             txtInput.getTextCursorDrawable().mutate().setColorFilter((new PorterDuffColorFilter(cursorColor, PorterDuff.Mode.SRC_ATOP)));
@@ -584,7 +587,7 @@ public class MessageDialog extends BaseDialog {
             boxRoot.setRootPadding(screenPaddings[0], screenPaddings[1], screenPaddings[2], screenPaddings[3]);
             if (backgroundColor != null) {
                 tintColor(bkg, backgroundColor);
-                if (style instanceof MaterialStyle) {
+                if (style.tintButtonBackground()) {
                     tintColor(btnSelectOther, backgroundColor);
                     tintColor(btnSelectNegative, backgroundColor);
                     tintColor(btnSelectPositive, backgroundColor);
@@ -641,7 +644,7 @@ public class MessageDialog extends BaseDialog {
                 }
             }
 
-            showText(txtDialogTitle, title);
+            showText(txtDialogTitle, title == null ? DialogX.defaultMessageDialogTitleText : title);
             showText(txtDialogTip, message);
             showText(btnSelectPositive, okText);
             showText(btnSelectNegative, cancelText);
@@ -663,6 +666,12 @@ public class MessageDialog extends BaseDialog {
             useTextInfo(btnSelectNegative, cancelTextInfo);
             useTextInfo(btnSelectOther, otherTextInfo);
 
+            if (boxButton != null) {
+                boxButton.setVisibility((btnSelectNegative != null && btnSelectNegative.getVisibility() == View.VISIBLE) ||
+                        (btnSelectOther != null && btnSelectOther.getVisibility() == View.VISIBLE) ||
+                        (btnSelectPositive != null && btnSelectPositive.getVisibility() == View.VISIBLE) ?
+                        View.VISIBLE : View.GONE);
+            }
             if (titleIcon != null) {
                 int size = (int) txtDialogTitle.getTextSize();
                 titleIcon.setBounds(0, 0, size, size);
@@ -671,9 +680,17 @@ public class MessageDialog extends BaseDialog {
             }
 
             if (inputInfo != null) {
-                if (inputInfo.getMAX_LENGTH() != -1)
+                int inputType = inputInfo.getInputType();
+                if (inputInfo.getMAX_LENGTH() != -1) {
+                    int inputClass = inputType & InputType.TYPE_MASK_CLASS;
+                    if (inputClass != InputType.TYPE_CLASS_TEXT &&
+                            inputClass != InputType.TYPE_CLASS_NUMBER &&
+                            inputClass != InputType.TYPE_CLASS_PHONE &&
+                            inputClass != InputType.TYPE_CLASS_DATETIME) {
+                        inputType = (inputType & ~InputType.TYPE_MASK_CLASS) | InputType.TYPE_CLASS_TEXT;
+                    }
                     txtInput.setFilters(new InputFilter[]{new InputFilter.LengthFilter(inputInfo.getMAX_LENGTH())});
-                int inputType = InputType.TYPE_CLASS_TEXT | inputInfo.getInputType();
+                }
                 if (inputInfo.isMultipleLines()) {
                     inputType = inputType | InputType.TYPE_TEXT_FLAG_MULTI_LINE;
                 }
@@ -711,25 +728,19 @@ public class MessageDialog extends BaseDialog {
                             case DialogXStyle.BUTTON_OK:
                                 boxButton.addView(btnSelectPositive);
                                 if (style.overrideVerticalButtonRes() != null) {
-                                    btnSelectPositive.setBackgroundResource(
-                                            style.overrideVerticalButtonRes().overrideVerticalOkButtonBackgroundRes(visibleButtonCount, isLightTheme())
-                                    );
+                                    btnSelectPositive.setBackgroundResource(style.overrideVerticalButtonRes().overrideVerticalOkButtonBackgroundRes(visibleButtonCount, isLightTheme()));
                                 }
                                 break;
                             case DialogXStyle.BUTTON_OTHER:
                                 boxButton.addView(btnSelectOther);
                                 if (style.overrideVerticalButtonRes() != null) {
-                                    btnSelectOther.setBackgroundResource(
-                                            style.overrideVerticalButtonRes().overrideVerticalOtherButtonBackgroundRes(visibleButtonCount, isLightTheme())
-                                    );
+                                    btnSelectOther.setBackgroundResource(style.overrideVerticalButtonRes().overrideVerticalOtherButtonBackgroundRes(visibleButtonCount, isLightTheme()));
                                 }
                                 break;
                             case DialogXStyle.BUTTON_CANCEL:
                                 boxButton.addView(btnSelectNegative);
                                 if (style.overrideVerticalButtonRes() != null) {
-                                    btnSelectNegative.setBackgroundResource(
-                                            style.overrideVerticalButtonRes().overrideVerticalCancelButtonBackgroundRes(visibleButtonCount, isLightTheme())
-                                    );
+                                    btnSelectNegative.setBackgroundResource(style.overrideVerticalButtonRes().overrideVerticalCancelButtonBackgroundRes(visibleButtonCount, isLightTheme()));
                                 }
                                 break;
                             case DialogXStyle.SPACE:
@@ -756,25 +767,19 @@ public class MessageDialog extends BaseDialog {
                             case DialogXStyle.BUTTON_OK:
                                 boxButton.addView(btnSelectPositive);
                                 if (style.overrideHorizontalButtonRes() != null) {
-                                    btnSelectPositive.setBackgroundResource(
-                                            style.overrideHorizontalButtonRes().overrideHorizontalOkButtonBackgroundRes(visibleButtonCount, isLightTheme())
-                                    );
+                                    btnSelectPositive.setBackgroundResource(style.overrideHorizontalButtonRes().overrideHorizontalOkButtonBackgroundRes(visibleButtonCount, isLightTheme()));
                                 }
                                 break;
                             case DialogXStyle.BUTTON_OTHER:
                                 boxButton.addView(btnSelectOther);
                                 if (style.overrideHorizontalButtonRes() != null) {
-                                    btnSelectOther.setBackgroundResource(
-                                            style.overrideHorizontalButtonRes().overrideHorizontalOtherButtonBackgroundRes(visibleButtonCount, isLightTheme())
-                                    );
+                                    btnSelectOther.setBackgroundResource(style.overrideHorizontalButtonRes().overrideHorizontalOtherButtonBackgroundRes(visibleButtonCount, isLightTheme()));
                                 }
                                 break;
                             case DialogXStyle.BUTTON_CANCEL:
                                 boxButton.addView(btnSelectNegative);
                                 if (style.overrideHorizontalButtonRes() != null) {
-                                    btnSelectNegative.setBackgroundResource(
-                                            style.overrideHorizontalButtonRes().overrideHorizontalCancelButtonBackgroundRes(visibleButtonCount, isLightTheme())
-                                    );
+                                    btnSelectNegative.setBackgroundResource(style.overrideHorizontalButtonRes().overrideHorizontalCancelButtonBackgroundRes(visibleButtonCount, isLightTheme()));
                                 }
                                 break;
                             case DialogXStyle.SPACE:

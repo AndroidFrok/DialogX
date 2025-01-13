@@ -12,6 +12,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.BaseAdapter;
+import android.widget.LinearLayout;
 
 import androidx.annotation.ColorInt;
 import androidx.annotation.ColorRes;
@@ -512,14 +513,17 @@ public class BottomMenu extends BottomDialog {
             } else {
                 listView = new DialogListView(getDialogImpl(), getOwnActivity());
             }
+            listView.setTag("ScrollController");
             listView.setOverScrollMode(OVER_SCROLL_NEVER);
             listView.setDivider(getResources().getDrawable(dividerDrawableResId));
             listView.setDividerHeight(dividerHeight);
+            getDialogImpl().scrollView = listView;
 
             listView.setBottomMenuListViewTouchEvent(new BottomMenuListViewTouchEvent() {
                 @Override
                 public void down(MotionEvent event) {
-                    touchDownY = getDialogImpl().bkg.getY();
+                    touchDownY = getDialogImpl().boxBkg.getY();
+                    log("#TouchDown: " + touchDownY);
                 }
             });
 
@@ -533,11 +537,13 @@ public class BottomMenu extends BottomDialog {
                     long currentTime = System.currentTimeMillis();
                     if (currentTime - lastClickTime > ITEM_CLICK_DELAY) {
                         lastClickTime = currentTime;
-                        float deltaY = Math.abs(touchDownY - getDialogImpl().bkg.getY());
+                        float deltaY = Math.abs(touchDownY - getDialogImpl().boxBkg.getY());
+                        log("#Click:deltaY= " + deltaY);
                         if (deltaY > dip2px(15)) {
                             return;
                         }
                         selectionIndex = position;
+                        log("### onMenuItemClickListener=" + onMenuItemClickListener);
                         switch (selectMode) {
                             case NONE:
                                 if (onMenuItemClickListener != null) {
@@ -563,7 +569,7 @@ public class BottomMenu extends BottomDialog {
                                             dismiss();
                                         }
                                     } else {
-                                        dismiss();
+                                        menuListAdapter.notifyDataSetInvalidated();
                                     }
                                 }
                                 break;
@@ -593,7 +599,18 @@ public class BottomMenu extends BottomDialog {
                                             dismiss();
                                         }
                                     } else {
-                                        dismiss();
+                                        if (selectionItems.contains(position)) {
+                                            selectionItems.remove(new Integer(position));
+                                        } else {
+                                            selectionItems.add(position);
+                                        }
+                                        menuListAdapter.notifyDataSetInvalidated();
+                                        resultArray = new int[selectionItems.size()];
+                                        selectTextArray = new CharSequence[selectionItems.size()];
+                                        for (int i = 0; i < selectionItems.size(); i++) {
+                                            resultArray[i] = selectionItems.get(i);
+                                            selectTextArray[i] = menuList.get(resultArray[i]);
+                                        }
                                     }
                                 }
                                 break;
@@ -609,7 +626,6 @@ public class BottomMenu extends BottomDialog {
 
             ViewGroup.LayoutParams listViewLp = new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
             getDialogImpl().boxList.addView(listView, listViewLp);
-
             refreshUI();
         }
     }
