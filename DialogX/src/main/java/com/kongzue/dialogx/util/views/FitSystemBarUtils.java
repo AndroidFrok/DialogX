@@ -367,9 +367,6 @@ public class FitSystemBarUtils {
                 }
             }
         }
-
-
-
         applyCallBack(initialPadding);
     }
 
