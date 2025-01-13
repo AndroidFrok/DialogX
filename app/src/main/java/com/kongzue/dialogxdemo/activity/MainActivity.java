@@ -538,7 +538,8 @@ public class MainActivity extends BaseActivity {
         btnInputDialog.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                new InputDialog("标题", "正文内容", "确定", "取消", "正在输入的文字").setInputText("Hello World").setOkButton(new OnInputDialogButtonClickListener<InputDialog>() {
+                new InputDialog("标题", "正文内容", "确定", "取消", "正在输入的文字").setInputText("Hello World")
+                        .setOkButton(new OnInputDialogButtonClickListener<InputDialog>() {
                     @Override
                     public boolean onClick(InputDialog baseDialog, View v, String inputStr) {
                         PopTip.show("输入的内容：" + inputStr);
