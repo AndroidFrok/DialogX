@@ -1,3 +1,6 @@
+fork:
+1. 当构建的时候总是报一些非代码问题的 空指针问题时  ，从控制台里点击  `Run with --scan` 就好了。 
+
 🌐 View [English Document](https://github.com/kongzue/DialogX/blob/master/README_EN.md) | [繁體中文文檔](https://github.com/kongzue/DialogX/blob/master/README_TC.md)
 
 <div align=center>    
