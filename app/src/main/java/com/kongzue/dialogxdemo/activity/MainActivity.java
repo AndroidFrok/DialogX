@@ -475,8 +475,8 @@ public class MainActivity extends BaseActivity {
         });
 
         BottomDialog dialog = null;
-        dialog.callDialogDismiss();
-        
+//        dialog.callDialogDismiss();
+
         btnFullScreenDialogFragment.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -498,8 +498,7 @@ public class MainActivity extends BaseActivity {
         btnMessageDialog.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                MessageDialog.show("标题", "这里是正文内容。", "确定")
-                        .setDialogLifecycleCallback(new DialogLifecycleCallback() {
+                MessageDialog.show("标题", "这里是正文内容。", "确定").setDialogLifecycleCallback(new DialogLifecycleCallback() {
                             @Override
                             public void onShow(BaseDialog dialog) {
                                 tip("onShow");
@@ -523,8 +522,7 @@ public class MainActivity extends BaseActivity {
 //                                tip("onDismiss");
 //                            }
 //                        })
-                        .setTitleIcon(R.mipmap.img_demo_avatar)
-                        .setOkButton(new OnDialogButtonClickListener<MessageDialog>() {
+                        .setTitleIcon(R.mipmap.img_demo_avatar).setOkButton(new OnDialogButtonClickListener<MessageDialog>() {
                             @Override
                             public boolean onClick(MessageDialog dialog, View v) {
                                 PopTip.show("点击确定按钮");
@@ -548,8 +546,7 @@ public class MainActivity extends BaseActivity {
         btnInputDialog.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                new InputDialog("标题", "正文内容", "确定", "取消", "正在输入的文字").setInputText("Hello World")
-                        .setOkButton(new OnInputDialogButtonClickListener<InputDialog>() {
+                new InputDialog("标题", "正文内容", "确定", "取消", "正在输入的文字").setInputText("Hello World").setOkButton(new OnInputDialogButtonClickListener<InputDialog>() {
                     @Override
                     public boolean onClick(InputDialog baseDialog, View v, String inputStr) {
                         PopTip.show("输入的内容：" + inputStr);
@@ -762,51 +759,47 @@ public class MainActivity extends BaseActivity {
             public void onClick(View v) {
                 if (rdoMaterial.isChecked()) {
                     //Material 可滑动展开 BottomMenu 演示
-                    BottomMenu.build()
-                            .setTitle("title")
-                            .setMessage("message")
-                            .setBottomDialogMaxHeight(0.6f)
-                            .setMenuList(new String[]{"添加", "查看", "编辑", "删除", "分享", "评论", "下载", "收藏", "赞！", "不喜欢", "所属专辑", "复制链接", "类似推荐", "添加", "查看", "编辑", "删除", "分享", "评论", "下载", "收藏", "赞！", "不喜欢", "所属专辑", "复制链接", "类似推荐"}).setOnIconChangeCallBack(new OnIconChangeCallBack<BottomMenu>(true) {
+                    BottomMenu.build().setTitle("title").setMessage("message").setBottomDialogMaxHeight(0.6f).setMenuList(new String[]{"添加", "查看", "编辑", "删除", "分享", "评论", "下载", "收藏", "赞！", "不喜欢", "所属专辑", "复制链接", "类似推荐", "添加", "查看", "编辑", "删除", "分享", "评论", "下载", "收藏", "赞！", "不喜欢", "所属专辑", "复制链接", "类似推荐"}).setOnIconChangeCallBack(new OnIconChangeCallBack<BottomMenu>(true) {
 
-                                @Override
-                                public int getIcon(BottomMenu bottomMenu, int index, String menuText) {
-                                    switch (menuText) {
-                                        case "添加":
-                                            return R.mipmap.img_dialogx_demo_add;
-                                        case "查看":
-                                            return R.mipmap.img_dialogx_demo_view;
-                                        case "编辑":
-                                            return R.mipmap.img_dialogx_demo_edit;
-                                        case "删除":
-                                            return R.mipmap.img_dialogx_demo_delete;
-                                        case "分享":
-                                            return R.mipmap.img_dialogx_demo_share;
-                                        case "评论":
-                                            return R.mipmap.img_dialogx_demo_comment;
-                                        case "下载":
-                                            return R.mipmap.img_dialogx_demo_download;
-                                        case "收藏":
-                                            return R.mipmap.img_dialogx_demo_favorite;
-                                        case "赞！":
-                                            return R.mipmap.img_dialogx_demo_good;
-                                        case "不喜欢":
-                                            return R.mipmap.img_dialogx_demo_dislike;
-                                        case "所属专辑":
-                                            return R.mipmap.img_dialogx_demo_album;
-                                        case "复制链接":
-                                            return R.mipmap.img_dialogx_demo_link;
-                                        case "类似推荐":
-                                            return R.mipmap.img_dialogx_demo_recommend;
-                                    }
-                                    return 0;
-                                }
-                            }).setOnMenuItemClickListener(new OnMenuItemClickListener<BottomMenu>() {
-                                @Override
-                                public boolean onClick(BottomMenu dialog, CharSequence text, int index) {
-                                    PopTip.show(text);
-                                    return false;
-                                }
-                            }).show();
+                        @Override
+                        public int getIcon(BottomMenu bottomMenu, int index, String menuText) {
+                            switch (menuText) {
+                                case "添加":
+                                    return R.mipmap.img_dialogx_demo_add;
+                                case "查看":
+                                    return R.mipmap.img_dialogx_demo_view;
+                                case "编辑":
+                                    return R.mipmap.img_dialogx_demo_edit;
+                                case "删除":
+                                    return R.mipmap.img_dialogx_demo_delete;
+                                case "分享":
+                                    return R.mipmap.img_dialogx_demo_share;
+                                case "评论":
+                                    return R.mipmap.img_dialogx_demo_comment;
+                                case "下载":
+                                    return R.mipmap.img_dialogx_demo_download;
+                                case "收藏":
+                                    return R.mipmap.img_dialogx_demo_favorite;
+                                case "赞！":
+                                    return R.mipmap.img_dialogx_demo_good;
+                                case "不喜欢":
+                                    return R.mipmap.img_dialogx_demo_dislike;
+                                case "所属专辑":
+                                    return R.mipmap.img_dialogx_demo_album;
+                                case "复制链接":
+                                    return R.mipmap.img_dialogx_demo_link;
+                                case "类似推荐":
+                                    return R.mipmap.img_dialogx_demo_recommend;
+                            }
+                            return 0;
+                        }
+                    }).setOnMenuItemClickListener(new OnMenuItemClickListener<BottomMenu>() {
+                        @Override
+                        public boolean onClick(BottomMenu dialog, CharSequence text, int index) {
+                            PopTip.show(text);
+                            return false;
+                        }
+                    }).show();
 
 //                      测试用代码
 //                    BottomMenu.show("添加", "查看", "编辑")
@@ -837,11 +830,7 @@ public class MainActivity extends BaseActivity {
                         }
                     }).setOnIconChangeCallBack(new MenuIconAdapter<BottomMenu>(false) {
 
-                        String[] urls = {
-                                "http://www.kongzue.com/test/res/dialogx/ic_menu_add.png",
-                                "http://www.kongzue.com/test/res/dialogx/ic_menu_read_later.png",
-                                "http://www.kongzue.com/test/res/dialogx/ic_menu_link.png"
-                        };
+                        String[] urls = {"http://www.kongzue.com/test/res/dialogx/ic_menu_add.png", "http://www.kongzue.com/test/res/dialogx/ic_menu_read_later.png", "http://www.kongzue.com/test/res/dialogx/ic_menu_link.png"};
 
                         @Override
                         public boolean applyIcon(BottomMenu dialog, int index, String menuText, ImageView iconImageView) {
@@ -1622,16 +1611,12 @@ public class MainActivity extends BaseActivity {
                 }
             };
             spannableString.setSpan(clickableSpan, start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-            MessageDialog.build()
-                    .setTitle("警告")
-                    .setMessage(spannableString)
-                    .setOkButton("知道了", new OnDialogButtonClickListener<MessageDialog>() {
-                        @Override
-                        public boolean onClick(MessageDialog dialog, View v) {
-                            return false;
-                        }
-                    })
-                    .show();
+            MessageDialog.build().setTitle("警告").setMessage(spannableString).setOkButton("知道了", new OnDialogButtonClickListener<MessageDialog>() {
+                @Override
+                public boolean onClick(MessageDialog dialog, View v) {
+                    return false;
+                }
+            }).show();
         }
     }
 }
