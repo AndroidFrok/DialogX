@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="colorAccent">#2196F3</color>
-
+    <color name="colorAccent">#8BC34A</color>
+<!--    <color name="colorAccent">#2196F3</color>-->
     <color name="dark">#353535</color>
     <color name="black">#000</color>
     <color name="black90">#E6000000</color>
@@ -32,7 +32,7 @@
     <color name="white10">#1Affffff</color>
     <color name="white5">#0DFFFFFF</color>
 
-    <color name="dialogxColorBlue">#2196F3</color>
+    <color name="dialogxColorBlue">#FFEB3B</color>
 
     <color name="dialogxMaterialDarkDialogBkgColor">#343434</color>
     <color name="dialogxWaitBkgLight">#F5F6F7</color>

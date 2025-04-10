@@ -31,6 +31,7 @@ import com.kongzue.dialogx.interfaces.BaseDialog;
 
 import java.util.List;
 
+
 public class FitSystemBarUtils {
 
     //当前是否正在平滑填充中
@@ -96,13 +97,7 @@ public class FitSystemBarUtils {
      * @param end    是否需要paddingEnd
      * @param bottom 是否需要paddingBottom
      */
-    public static FitSystemBarUtils attachView(
-            View view,
-            boolean start,
-            boolean top,
-            boolean end,
-            boolean bottom
-    ) {
+    public static FitSystemBarUtils attachView(View view, boolean start, boolean top, boolean end, boolean bottom) {
         return attachView(view, new CallBack() {
             @Override
             public boolean isEnable(Orientation orientation) {
@@ -149,12 +144,7 @@ public class FitSystemBarUtils {
     public void applyWindowInsets() {
 //        view.fitsSystemWindows = true
         //创建原始padding的快照
-        RelativePadding initialPadding = new RelativePadding(
-                ViewCompat.getPaddingStart(contentView),
-                contentView.getPaddingTop(),
-                ViewCompat.getPaddingEnd(contentView),
-                contentView.getPaddingBottom()
-        );
+        RelativePadding initialPadding = new RelativePadding(ViewCompat.getPaddingStart(contentView), contentView.getPaddingTop(), ViewCompat.getPaddingEnd(contentView), contentView.getPaddingBottom());
         //不带平滑变化的
         ViewCompat.setOnApplyWindowInsetsListener(contentView, (view, insets) -> {
             if (inSmoothingPadding) return insets;
@@ -164,35 +154,31 @@ public class FitSystemBarUtils {
         //带平滑变化的，但是支支持android R及以上
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             log("FitSystemBarUtils: setWindowInsetsAnimationCallback");
-            ViewCompat.setWindowInsetsAnimationCallback(contentView,
-                    new WindowInsetsAnimationCompat.Callback(DISPATCH_MODE_CONTINUE_ON_SUBTREE) {
+            ViewCompat.setWindowInsetsAnimationCallback(contentView, new WindowInsetsAnimationCompat.Callback(DISPATCH_MODE_CONTINUE_ON_SUBTREE) {
 
-                        @NonNull
-                        @Override
-                        public WindowInsetsCompat onProgress(
-                                @NonNull WindowInsetsCompat insets,
-                                @NonNull List<WindowInsetsAnimationCompat> runningAnimations
-                        ) {
-                            log("FitSystemBarUtils: setWindowInsetsAnimationCallback#onProgress: " + insets);
-                            if (smoothPadding) {
-                                formatInsets(insets, new RelativePadding(initialPadding));
-                            }
-                            return insets;
-                        }
+                @NonNull
+                @Override
+                public WindowInsetsCompat onProgress(@NonNull WindowInsetsCompat insets, @NonNull List<WindowInsetsAnimationCompat> runningAnimations) {
+                    log("FitSystemBarUtils: setWindowInsetsAnimationCallback#onProgress: " + insets);
+                    if (smoothPadding) {
+                        formatInsets(insets, new RelativePadding(initialPadding));
+                    }
+                    return insets;
+                }
 
-                        @Override
-                        public void onEnd(@NonNull WindowInsetsAnimationCompat animation) {
-                            log("FitSystemBarUtils: setWindowInsetsAnimationCallback#onEnd ");
-                            inSmoothingPadding = false;
-                            super.onEnd(animation);
-                        }
+                @Override
+                public void onEnd(@NonNull WindowInsetsAnimationCompat animation) {
+                    log("FitSystemBarUtils: setWindowInsetsAnimationCallback#onEnd ");
+                    inSmoothingPadding = false;
+                    super.onEnd(animation);
+                }
 
-                        @Override
-                        public void onPrepare(@NonNull WindowInsetsAnimationCompat animation) {
-                            inSmoothingPadding = smoothPadding;
-                            super.onPrepare(animation);
-                        }
-                    });
+                @Override
+                public void onPrepare(@NonNull WindowInsetsAnimationCompat animation) {
+                    inSmoothingPadding = smoothPadding;
+                    super.onPrepare(animation);
+                }
+            });
         }
 
         if (ViewCompat.isAttachedToWindow(contentView)) {
@@ -320,72 +306,69 @@ public class FitSystemBarUtils {
                 cutoutPaddingBottom = displayCutout.getSafeInsetRight();
             }
         }
-        Insets systemBars = insetsCompat.getInsets(
-                WindowInsetsCompat.Type.ime() | WindowInsetsCompat.Type.systemBars()
-        );
+        Insets systemBars = insetsCompat.getInsets(WindowInsetsCompat.Type.ime() | WindowInsetsCompat.Type.systemBars());
         systemWindowInsetLeft = systemBars.left;
         systemWindowInsetRight = systemBars.right;
 
-        //对api低于30的设备，做额外判断，api 30+的不需要这个
-        int suv = contentView.getRootView().getWindowSystemUiVisibility();
-        boolean statusBar = true;
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
-            statusBar = (suv & View.SYSTEM_UI_FLAG_FULLSCREEN) == 0;
-        }
-        boolean naviBar = true;
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
-            naviBar = (suv & View.SYSTEM_UI_FLAG_HIDE_NAVIGATION) == 0;
-        }
-        if (naviBar && (insetsCompat.isVisible(WindowInsetsCompat.Type.ime())
-                || insetsCompat.isVisible(WindowInsetsCompat.Type.navigationBars()))
-        ) {
-            systemWindowInsetBottom = systemBars.bottom;
-        }
-        if (statusBar && insetsCompat.isVisible(WindowInsetsCompat.Type.statusBars())) {
-            systemWindowInsetTop = systemBars.top;
-        }
-        if (isWrongInsets(systemBars)) {
-            log("    FitSystemBarUtils: isWrongInsets try special mode...");
-            int deviceOrientation = checkOrientationAndStatusBarSide();
-            log("    FitSystemBarUtils: deviceOrientation = " + deviceOrientation);
-            switch (deviceOrientation) {
-                case 1:
-                    initialPadding.end = getStatusBarHeight();
-                    initialPadding.start = getNavigationBarHeight();
-                    break;
-                default:
-                    initialPadding.top = getStatusBarHeight();
-                    initialPadding.bottom = getNavigationBarHeight();
-                    break;
+        if (contentView != null) {
+            //对api低于30的设备，做额外判断，api 30+的不需要这个
+            int suv = contentView.getRootView().getWindowSystemUiVisibility();
+            boolean statusBar = true;
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
+                statusBar = (suv & View.SYSTEM_UI_FLAG_FULLSCREEN) == 0;
             }
-            addListenerWhenImeHeightChanged();
-        } else {
-            specialMode = false;
-            if (callBack.isEnable(Orientation.Top)) {
-                initialPadding.top += Math.max(systemWindowInsetTop, cutoutPaddingTop);
+            boolean naviBar = true;
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
+                naviBar = (suv & View.SYSTEM_UI_FLAG_HIDE_NAVIGATION) == 0;
             }
-            if (callBack.isEnable(Orientation.Bottom)) {
-                initialPadding.bottom += Math.max(systemWindowInsetBottom, cutoutPaddingBottom);
+            if (naviBar && (insetsCompat.isVisible(WindowInsetsCompat.Type.ime()) || insetsCompat.isVisible(WindowInsetsCompat.Type.navigationBars()))) {
+                systemWindowInsetBottom = systemBars.bottom;
+            }
+            if (statusBar && insetsCompat.isVisible(WindowInsetsCompat.Type.statusBars())) {
+                systemWindowInsetTop = systemBars.top;
             }
 
-            boolean isRtl =
-                    ViewCompat.getLayoutDirection(contentView) == ViewCompat.LAYOUT_DIRECTION_RTL;
-            if (callBack.isEnable(Orientation.Start)) {
-                if (isRtl) {
-                    initialPadding.start += Math.max(systemWindowInsetRight, cutoutPaddingRight);
-                } else {
-                    initialPadding.start += Math.max(systemWindowInsetLeft, cutoutPaddingLeft);
+            if (isWrongInsets(systemBars)) {
+                log("    FitSystemBarUtils: isWrongInsets try special mode...");
+                int deviceOrientation = checkOrientationAndStatusBarSide();
+                log("    FitSystemBarUtils: deviceOrientation = " + deviceOrientation);
+                switch (deviceOrientation) {
+                    case 1:
+                        initialPadding.end = getStatusBarHeight();
+                        initialPadding.start = getNavigationBarHeight();
+                        break;
+                    default:
+                        initialPadding.top = getStatusBarHeight();
+                        initialPadding.bottom = getNavigationBarHeight();
+                        break;
                 }
-            }
-            if (callBack.isEnable(Orientation.End)) {
-                if (isRtl) {
-                    initialPadding.end += Math.max(systemWindowInsetLeft, cutoutPaddingLeft);
-                } else {
-                    initialPadding.end += Math.max(systemWindowInsetRight, cutoutPaddingRight);
+                addListenerWhenImeHeightChanged();
+            } else {
+                specialMode = false;
+                if (callBack.isEnable(Orientation.Top)) {
+                    initialPadding.top += Math.max(systemWindowInsetTop, cutoutPaddingTop);
+                }
+                if (callBack.isEnable(Orientation.Bottom)) {
+                    initialPadding.bottom += Math.max(systemWindowInsetBottom, cutoutPaddingBottom);
+                }
+
+                boolean isRtl = ViewCompat.getLayoutDirection(contentView) == ViewCompat.LAYOUT_DIRECTION_RTL;
+                if (callBack.isEnable(Orientation.Start)) {
+                    if (isRtl) {
+                        initialPadding.start += Math.max(systemWindowInsetRight, cutoutPaddingRight);
+                    } else {
+                        initialPadding.start += Math.max(systemWindowInsetLeft, cutoutPaddingLeft);
+                    }
+                }
+                if (callBack.isEnable(Orientation.End)) {
+                    if (isRtl) {
+                        initialPadding.end += Math.max(systemWindowInsetLeft, cutoutPaddingLeft);
+                    } else {
+                        initialPadding.end += Math.max(systemWindowInsetRight, cutoutPaddingRight);
+                    }
                 }
             }
         }
-
         applyCallBack(initialPadding);
     }
 
@@ -407,16 +390,8 @@ public class FitSystemBarUtils {
 
         initialPadding.applyToView(contentView);
         //四边 非安全区 传递回去
-        log("    KONGZUE DEBUG DIALOGX FitSystemBarUtils callBack: left=" + initialPadding.start + " top=" + initialPadding.top +
-                " right=" + initialPadding.end + " bottom=" + initialPadding.bottom + " specialMode=" + specialMode +
-                " specialModeImeHeight=" + specialModeImeHeight
-        );
-        callBack.unsafeRect(
-                initialPadding.start,
-                initialPadding.top,
-                initialPadding.end,
-                initialPadding.bottom + (specialMode ? specialModeImeHeight : 0)
-        );
+        log("    KONGZUE DEBUG DIALOGX FitSystemBarUtils callBack: left=" + initialPadding.start + " top=" + initialPadding.top + " right=" + initialPadding.end + " bottom=" + initialPadding.bottom + " specialMode=" + specialMode + " specialModeImeHeight=" + specialModeImeHeight);
+        callBack.unsafeRect(initialPadding.start, initialPadding.top, initialPadding.end, initialPadding.bottom + (specialMode ? specialModeImeHeight : 0));
     }
 
     private boolean isWrongInsets(Insets systemBars) {
