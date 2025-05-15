@@ -42,8 +42,6 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.constraintlayout.widget.ConstraintLayout;
-import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -86,12 +84,13 @@ import com.kongzue.dialogx.interfaces.OnInputDialogButtonClickListener;
 import com.kongzue.dialogx.interfaces.OnMenuButtonClickListener;
 import com.kongzue.dialogx.interfaces.OnMenuItemClickListener;
 import com.kongzue.dialogx.interfaces.OnMenuItemSelectListener;
+import com.kongzue.dialogx.interfaces.PopMoveDisplacementInterceptor;
 import com.kongzue.dialogx.style.IOSStyle;
 import com.kongzue.dialogx.style.KongzueStyle;
 import com.kongzue.dialogx.style.MIUIStyle;
 import com.kongzue.dialogx.style.MaterialStyle;
+import com.kongzue.dialogx.util.ItemDivider;
 import com.kongzue.dialogx.util.TextInfo;
-import com.kongzue.dialogxdemo.BuildConfig;
 import com.kongzue.dialogxdemo.R;
 import com.kongzue.dialogxdemo.custom.recycleview.CustomRecycleViewAdapter;
 import com.kongzue.dialogxdemo.fragment.CustomFragment;
@@ -470,12 +469,9 @@ public class MainActivity extends BaseActivity {
                         btnSelectMenu.setText(text);
                         return false;
                     }
-                });
+                }).setItemDivider(new ItemDivider(15,15,1));
             }
         });
-
-        BottomDialog dialog = null;
-//        dialog.callDialogDismiss();
 
         btnFullScreenDialogFragment.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -1252,9 +1248,12 @@ public class MainActivity extends BaseActivity {
         });
 
         btnPoptip.setOnClickListener(new View.OnClickListener() {
+            int index;
+
             @Override
             public void onClick(View v) {
-                PopTip.show("这是一个提示");
+                index++;
+                PopTip.show("任务 " + index + " 已完成处理", "撤销").setEnterAnimDuration(500).iconSuccess();
             }
         });
 
@@ -1413,7 +1412,7 @@ public class MainActivity extends BaseActivity {
                         toast("点击回复按钮");
                         return false;
                     }
-                }).showLong();
+                });
             }
         });
 

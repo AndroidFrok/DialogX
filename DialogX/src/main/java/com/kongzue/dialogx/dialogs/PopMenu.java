@@ -4,6 +4,7 @@ import static android.view.View.OVER_SCROLL_NEVER;
 import static android.view.View.VISIBLE;
 
 import android.animation.ValueAnimator;
+import android.app.Activity;
 import android.graphics.Outline;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Build;
@@ -43,6 +44,7 @@ import com.kongzue.dialogx.interfaces.OnBindView;
 import com.kongzue.dialogx.interfaces.OnIconChangeCallBack;
 import com.kongzue.dialogx.interfaces.OnMenuItemClickListener;
 import com.kongzue.dialogx.util.DialogXViewLoc;
+import com.kongzue.dialogx.util.ItemDivider;
 import com.kongzue.dialogx.util.PopMenuArrayAdapter;
 import com.kongzue.dialogx.util.TextInfo;
 import com.kongzue.dialogx.util.views.DialogXBaseRelativeLayout;
@@ -91,6 +93,7 @@ public class PopMenu extends BaseDialog {
     protected MenuItemLayoutRefreshCallback<PopMenu> menuMenuItemLayoutRefreshCallback;
     protected int pressedIndex = -1;
     protected Map<Integer, Boolean> menuUsability = new HashMap<Integer, Boolean>();
+    protected ItemDivider itemDivider;
 
     protected int alignGravity = -1;                                        // 指定菜单相对 baseView 的位置
 
@@ -261,6 +264,62 @@ public class PopMenu extends BaseDialog {
             show(dialogView);
         } else {
             show(getDialogView());
+        }
+        if (baseView() != null) {
+            viewTreeObserver = baseView().getViewTreeObserver();
+            viewTreeObserver.addOnDrawListener(baseViewDrawListener = new ViewTreeObserver.OnDrawListener() {
+                @Override
+                public void onDraw() {
+                    int[] baseViewLocCache = new int[2];
+                    if (baseView() != null) {
+                        baseView().getLocationInWindow(baseViewLocCache);
+                        if (getDialogImpl() != null && !baseViewLoc.isSameLoc(baseViewLocCache) && baseView().getVisibility() == VISIBLE) {
+                            baseViewLoc.set(baseViewLocCache);
+                            refreshMenuLoc();
+                        }
+                    } else {
+                        if (viewTreeObserver != null) {
+                            removeDrawListener(viewTreeObserver, this);
+                            viewTreeObserver = null;
+                            baseViewDrawListener = null;
+                        }
+                    }
+                }
+            });
+        }
+        return this;
+    }
+
+    public PopMenu show(Activity activity) {
+        if (isHide && getDialogView() != null && isShow) {
+            if (hideWithExitAnim && getDialogImpl() != null) {
+                getDialogImpl().boxBody.clearAnimation();
+                getDialogView().setVisibility(View.VISIBLE);
+                getDialogImpl().boxRoot.animate().alpha(1f);
+                getDialogImpl().getDialogXAnimImpl().doShowAnim(me, getDialogImpl().boxBody);
+            } else {
+                getDialogView().setVisibility(View.VISIBLE);
+            }
+            return this;
+        }
+
+        super.beforeShow();
+        if (getDialogView() == null) {
+            int layoutId = isLightTheme() ? R.layout.layout_dialogx_popmenu_material : R.layout.layout_dialogx_popmenu_material_dark;
+            if (getStyle().popMenuSettings() != null) {
+                if (getStyle().popMenuSettings().layout(isLightTheme()) != 0) {
+                    layoutId = getStyle().popMenuSettings().layout(isLightTheme());
+                }
+            }
+
+            View dialogView = createView(layoutId);
+            dialogImpl = new DialogImpl(dialogView);
+            if (dialogView != null) {
+                dialogView.setTag(me);
+            }
+            show(activity, dialogView);
+        } else {
+            show(activity, getDialogView());
         }
         if (baseView() != null) {
             viewTreeObserver = baseView().getViewTreeObserver();
@@ -671,6 +730,11 @@ public class PopMenu extends BaseDialog {
                         ((BlurViewType) blurView).setOverlayColor(backgroundColor);
                     }
                 }
+            }
+
+            if (itemDivider != null) {
+                listMenu.setDivider(itemDivider.createDividerDrawable(getOwnActivity(), isLightTheme()));
+                listMenu.setDividerHeight(itemDivider.getWidth());
             }
 
             onDialogRefreshUI();
@@ -1536,23 +1600,33 @@ public class PopMenu extends BaseDialog {
         return this;
     }
 
-    public PopMenu cleanAction(int actionId){
+    public PopMenu cleanAction(int actionId) {
         dialogActionRunnableMap.remove(actionId);
         return this;
     }
 
-    public PopMenu cleanAllAction(){
+    public PopMenu cleanAllAction() {
         dialogActionRunnableMap.clear();
         return this;
     }
 
     // for BaseDialog use
-    public void callDialogDismiss(){
+    public void callDialogDismiss() {
         dismiss();
     }
 
-    public PopMenu bindDismissWithLifecycleOwner(LifecycleOwner owner){
+    public PopMenu bindDismissWithLifecycleOwner(LifecycleOwner owner) {
         super.bindDismissWithLifecycleOwnerPrivate(owner);
+        return this;
+    }
+
+    public ItemDivider getItemDivider() {
+        return itemDivider;
+    }
+
+    public PopMenu setItemDivider(ItemDivider itemDivider) {
+        this.itemDivider = itemDivider;
+        refreshUI();
         return this;
     }
 }
